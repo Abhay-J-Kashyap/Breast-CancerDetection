@@ -5,6 +5,7 @@ import torch.nn as nn
 from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
 import os
+import plotly.express as px
 
 # ---- MODEL DEFINITION ----
 class NeuralNet(nn.Module):
@@ -56,13 +57,8 @@ if password != PASSWORD:
     st.warning("Please enter the correct password to access the app.")
     st.stop()
 
-#downloading sample csv
-if st.button("📄 Download Sample CSV"):
-    sample_df = pd.DataFrame(data.data[:5], columns=data.feature_names)
-    csv = sample_df.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Download CSV Template", data=csv, file_name="sample_template.csv")
-
-#feature explanation
+# ---- SIDEBAR EXTRAS ----
+# Feature explanation
 with st.sidebar.expander("📚 Feature Info"):
     st.write("Each column represents a feature from the breast cancer dataset. For example:")
     st.markdown("""
@@ -72,6 +68,13 @@ with st.sidebar.expander("📚 Feature Info"):
     - ...
     """)
 
+# Sample CSV download
+sample_df = pd.DataFrame(data.data[:5], columns=data.feature_names)
+csv_template = sample_df.to_csv(index=False).encode("utf-8")
+with st.sidebar:
+    st.download_button("📄 Download Sample CSV", data=csv_template, file_name="sample_template.csv", mime="text/csv")
+
+# ---- FILE UPLOAD ----
 st.write("Upload a **CSV** file with 30 numerical features (from breast cancer dataset) to predict if samples are **Malignant** or **Benign**.")
 
 uploaded_file = st.file_uploader("📁 Upload CSV", type=["csv"])
@@ -95,22 +98,23 @@ if uploaded_file is not None:
                 predictions = outputs.round().numpy().astype(int).flatten()
 
             df["Prediction"] = ["Malignant" if p == 1 else "Benign" for p in predictions]
-            import plotly.express as px
-            # Count prediction results
+
+            # Pie chart of results
             counts = df["Prediction"].value_counts().reset_index()
             counts.columns = ["Label", "Count"]
-            # Create and display pie chart
+
             fig = px.pie(
-            counts, 
-            names="Label", 
-            values="Count", 
-            hole=0.3,  # Makes it a donut chart
-            hover_data=["Count"],
-            title="🔬 Prediction Distribution",
-            color_discrete_sequence=px.colors.qualitative.Safe  # optional: nice preset colors
+                counts,
+                names="Label",
+                values="Count",
+                hole=0.3,
+                hover_data=["Count"],
+                title="🔬 Prediction Distribution",
+                color_discrete_sequence=px.colors.qualitative.Safe
             )
             st.plotly_chart(fig)
 
+            # Results table
             st.subheader("🧾 Prediction Results")
             st.dataframe(df[["Prediction"]])
 
