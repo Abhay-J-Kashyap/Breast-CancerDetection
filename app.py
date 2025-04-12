@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -46,7 +47,6 @@ scaler = StandardScaler()
 scaler.fit(data.data)
 
 # ---- STREAMLIT UI ----
-st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
 st.title("🩺 Breast Cancer Detection")
 
 # --- PASSWORD CHECK ---
