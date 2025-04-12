@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
+import os
 
 # ---- MODEL DEFINITION ----
 class NeuralNet(nn.Module):
@@ -24,6 +25,10 @@ class NeuralNet(nn.Module):
 # ---- MODEL LOADING ----
 @st.cache_resource
 def load_model():
+    if not os.path.exists("model.pth"):
+        st.error("Model file not found. Please make sure `model.pth` is in the same directory.")
+        st.stop()
+
     input_size = 30
     hidden_size = 64
     output_size = 1
@@ -39,11 +44,11 @@ data = load_breast_cancer()
 scaler = StandardScaler()
 scaler.fit(data.data)
 
-# --- PASSWORD CHECK ---
+# ---- STREAMLIT UI ----
 st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
-
 st.title("🩺 Breast Cancer Detection")
 
+# --- PASSWORD CHECK ---
 PASSWORD = "abhay2310"  
 password = st.text_input("🔒 Enter access password", type="password")
 
@@ -51,7 +56,6 @@ if password != PASSWORD:
     st.warning("Please enter the correct password to access the app.")
     st.stop()
 
-st.title("🩺 Breast Cancer Detection")
 st.write("Upload a **CSV** file with 30 numerical features (from breast cancer dataset) to predict if samples are **Malignant** or **Benign**.")
 
 uploaded_file = st.file_uploader("📁 Upload CSV", type=["csv"])
@@ -90,4 +94,3 @@ if uploaded_file is not None:
         st.error(f"An error occurred: {e}")
 else:
     st.info("Awaiting file upload...")
-
