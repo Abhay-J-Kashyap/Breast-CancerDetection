@@ -1,13 +1,11 @@
-
 import streamlit as st
+import pandas as pd
 import torch
 import torch.nn as nn
-import numpy as np
+from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
-import pandas as pd
 
-device = torch.device("cpu")
-
+# ---- MODEL DEFINITION ----
 class NeuralNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(NeuralNet, self).__init__()
@@ -17,49 +15,70 @@ class NeuralNet(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        out = self.fc1(x)
-        out = self.relu(out)
-        out = self.fc2(out)
-        out = self.sigmoid(out)
-        return out
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        x = self.sigmoid(x)
+        return x
 
-input_size = 30
-hidden_size = 64
-output_size = 1
+# ---- MODEL LOADING ----
+@st.cache_resource
+def load_model():
+    input_size = 30
+    hidden_size = 64
+    output_size = 1
+    model = NeuralNet(input_size, hidden_size, output_size)
+    model.load_state_dict(torch.load("model.pth", map_location=torch.device("cpu")))
+    model.eval()
+    return model
 
-model = NeuralNet(input_size, hidden_size, output_size)
-model.load_state_dict(torch.load("model.pth", map_location=device))
-model.eval()
+model = load_model()
 
-from sklearn.datasets import load_breast_cancer
+# ---- SCALER ----
 data = load_breast_cancer()
-X = data.data
 scaler = StandardScaler()
-scaler.fit(X)
+scaler.fit(data.data)
 
-st.title("🧠 Breast Cancer Detection")
-st.write("Upload a CSV file with 30 features to predict benign (0) or malignant (1).")
+# ---- STREAMLIT UI ----
+st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
 
-uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+st.title("🩺 Breast Cancer Detection")
+st.write("Upload a **CSV** file with 30 numerical features (from breast cancer dataset) to predict if samples are **Malignant** or **Benign**.")
+
+uploaded_file = st.file_uploader("📁 Upload CSV", type=["csv"])
 
 if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
+    try:
+        df = pd.read_csv(uploaded_file)
 
-    if df.shape[1] != 30:
-        st.error("CSV file must have exactly 30 features (no target column).")
-    else:
-        st.write("Data preview:")
-        st.dataframe(df.head())
+        if df.shape[1] != 30:
+            st.error(f"Expected 30 features, but got {df.shape[1]}. Please check your CSV.")
+        else:
+            st.success("✅ File uploaded successfully!")
+            st.dataframe(df.head())
 
-        inputs = scaler.transform(df.values)
-        inputs_tensor = torch.tensor(inputs, dtype=torch.float32)
+            # Preprocess and predict
+            inputs = scaler.transform(df.values)
+            inputs_tensor = torch.tensor(inputs, dtype=torch.float32)
 
-        with torch.no_grad():
-            outputs = model(inputs_tensor)
-            predictions = outputs.round().numpy().astype(int).flatten()
+            with torch.no_grad():
+                outputs = model(inputs_tensor)
+                predictions = outputs.round().numpy().astype(int).flatten()
 
-        result_df = df.copy()
-        result_df["Prediction"] = predictions
-        result_df["Prediction"] = result_df["Prediction"].map({0: "Benign", 1: "Malignant"})
-        st.subheader("Prediction Results")
-        st.write(result_df)
+            df["Prediction"] = ["Malignant" if p == 1 else "Benign" for p in predictions]
+            st.subheader("🧾 Prediction Results")
+            st.dataframe(df[["Prediction"]])
+
+            # Download results
+            csv = df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "⬇️ Download Results as CSV",
+                data=csv,
+                file_name="predictions.csv",
+                mime="text/csv"
+            )
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+else:
+    st.info("Awaiting file upload...")
+
