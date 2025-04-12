@@ -1,10 +1,13 @@
 import streamlit as st
 st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
+
 import pandas as pd
+import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
+from sklearn.impute import KNNImputer
 import os
 import plotly.express as px
 
@@ -30,7 +33,6 @@ def load_model():
     if not os.path.exists("model.pth"):
         st.error("Model file not found. Please make sure `model.pth` is in the same directory.")
         st.stop()
-
     input_size = 30
     hidden_size = 64
     output_size = 1
@@ -50,7 +52,7 @@ scaler.fit(data.data)
 st.title("🩺 Breast Cancer Detection")
 
 # --- PASSWORD CHECK ---
-PASSWORD = "abhay2310"  
+PASSWORD = "abhay2310"
 password = st.text_input("🔒 Enter access password", type="password")
 
 if password != PASSWORD:
@@ -60,19 +62,58 @@ if password != PASSWORD:
 # ---- SIDEBAR EXTRAS ----
 # Feature explanation
 with st.sidebar.expander("📚 Feature Info"):
-    st.write("Each column represents a feature from the breast cancer dataset. For example:")
     st.markdown("""
-    - `mean radius`: average size of the nucleus
-    - `mean texture`: standard deviation of gray-scale values
-    - `mean smoothness`: smoothness of cell borders
-    - ...
+    The dataset contains 30 numerical features per sample derived from digitized images of fine needle aspirate (FNA) of breast mass. These are grouped in three categories: **mean**, **standard error**, and **worst** (largest values).
+
+    **Mean features:**
+    - `mean radius`: average distance from center to points on perimeter  
+    - `mean texture`: standard deviation of gray-scale values  
+    - `mean perimeter`: mean size of the perimeter  
+    - `mean area`: average area  
+    - `mean smoothness`: local variation in radius lengths  
+    - `mean compactness`: (perimeter² / area - 1.0)  
+    - `mean concavity`: severity of concave portions of contour  
+    - `mean concave points`: number of concave portions  
+    - `mean symmetry`: symmetry of the cell nuclei  
+    - `mean fractal dimension`: complexity of the contour  
+
+    **Standard error (SE) features:**
+    - `radius error`  
+    - `texture error`  
+    - `perimeter error`  
+    - `area error`  
+    - `smoothness error`  
+    - `compactness error`  
+    - `concavity error`  
+    - `concave points error`  
+    - `symmetry error`  
+    - `fractal dimension error`  
+
+    **Worst-case features (largest values):**
+    - `worst radius`  
+    - `worst texture`  
+    - `worst perimeter`  
+    - `worst area`  
+    - `worst smoothness`  
+    - `worst compactness`  
+    - `worst concavity`  
+    - `worst concave points`  
+    - `worst symmetry`  
+    - `worst fractal dimension`  
     """)
 
-# Sample CSV download
-sample_df = pd.DataFrame(data.data[:5], columns=data.feature_names)
-csv_template = sample_df.to_csv(index=False).encode("utf-8")
-with st.sidebar:
-    st.download_button("📄 Download Sample CSV", data=csv_template, file_name="sample_template.csv", mime="text/csv")
+# Sample CSV generator with missing values
+if st.sidebar.button("✨ Generate Random CSV with Missing Values"):
+    feature_names = data.feature_names
+    random_data = np.random.normal(loc=14, scale=5, size=(10, 30))
+    df_random = pd.DataFrame(random_data, columns=feature_names)
+
+    # Introduce missing values randomly (~10% of the entries)
+    mask = np.random.rand(*df_random.shape) < 0.1
+    df_random[mask] = np.nan
+
+    csv_random = df_random.to_csv(index=False).encode("utf-8")
+    st.sidebar.download_button("⬇️ Download Random CSV", data=csv_random, file_name="random_data_with_missing.csv", mime="text/csv")
 
 # ---- FILE UPLOAD ----
 st.write("Upload a **CSV** file with 30 numerical features (from breast cancer dataset) to predict if samples are **Malignant** or **Benign**.")
@@ -88,6 +129,13 @@ if uploaded_file is not None:
         else:
             st.success("✅ File uploaded successfully!")
             st.dataframe(df.head())
+
+            # ---- HANDLE MISSING VALUES WITH KNN ----
+            if df.isnull().values.any():
+                st.warning("⚠️ Missing values detected — imputing with KNN.")
+                knn_imputer = KNNImputer(n_neighbors=5)
+                df_imputed = knn_imputer.fit_transform(df)
+                df = pd.DataFrame(df_imputed, columns=df.columns)
 
             # Preprocess and predict
             inputs = scaler.transform(df.values)
