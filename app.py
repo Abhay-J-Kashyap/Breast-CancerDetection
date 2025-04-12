@@ -1,17 +1,3 @@
-# --- PASSWORD CHECK ---
-st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
-
-st.title("🩺 Breast Cancer Detection")
-
-PASSWORD = "openai123"  # 👈 Change this to your desired password
-password = st.text_input("🔒 Enter access password", type="password")
-
-if password != PASSWORD:
-    st.warning("Please enter the correct password to access the app.")
-    st.stop()
-
-
-
 import streamlit as st
 import pandas as pd
 import torch
@@ -55,6 +41,18 @@ scaler.fit(data.data)
 
 # ---- STREAMLIT UI ----
 st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
+
+# --- PASSWORD CHECK ---
+st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
+
+st.title("🩺 Breast Cancer Detection")
+
+PASSWORD = "abhay2310"  
+password = st.text_input("🔒 Enter access password", type="password")
+
+if password != PASSWORD:
+    st.warning("Please enter the correct password to access the app.")
+    st.stop()
 
 st.title("🩺 Breast Cancer Detection")
 st.write("Upload a **CSV** file with 30 numerical features (from breast cancer dataset) to predict if samples are **Malignant** or **Benign**.")
