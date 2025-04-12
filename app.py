@@ -39,9 +39,6 @@ data = load_breast_cancer()
 scaler = StandardScaler()
 scaler.fit(data.data)
 
-# ---- STREAMLIT UI ----
-st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
-
 # --- PASSWORD CHECK ---
 st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
 
