@@ -103,17 +103,11 @@ with st.sidebar.expander("📚 Feature Info"):
     """)
 
 # Sample CSV generator with missing values
-if st.sidebar.button("✨ Generate Random CSV with Missing Values"):
-    feature_names = data.feature_names
-    random_data = np.random.normal(loc=14, scale=5, size=(10, 30))
-    df_random = pd.DataFrame(random_data, columns=feature_names)
-
-    # Introduce missing values randomly (~10% of the entries)
-    mask = np.random.rand(*df_random.shape) < 0.1
-    df_random[mask] = np.nan
-
-    csv_random = df_random.to_csv(index=False).encode("utf-8")
-    st.sidebar.download_button("⬇️ Download Random CSV", data=csv_random, file_name="random_data_with_missing.csv", mime="text/csv")
+if st.sidebar.button("📄 Download Sample CSV"):
+    sample_df = pd.DataFrame(data.data, columns=data.feature_names)
+    random_sample = sample_df.sample(n=5, random_state=np.random.randint(10000))
+    csv_template = random_sample.to_csv(index=False).encode("utf-8")
+    st.sidebar.download_button("⬇️ Download Sample CSV", data=csv_template, file_name="sample_template.csv", mime="text/csv")
 
 # ---- FILE UPLOAD ----
 st.write("Upload a **CSV** file with 30 numerical features (from breast cancer dataset) to predict if samples are **Malignant** or **Benign**.")
