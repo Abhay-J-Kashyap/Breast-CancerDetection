@@ -1,3 +1,17 @@
+# --- PASSWORD CHECK ---
+st.set_page_config(page_title="Breast Cancer Classifier", layout="centered")
+
+st.title("🩺 Breast Cancer Detection")
+
+PASSWORD = "openai123"  # 👈 Change this to your desired password
+password = st.text_input("🔒 Enter access password", type="password")
+
+if password != PASSWORD:
+    st.warning("Please enter the correct password to access the app.")
+    st.stop()
+
+
+
 import streamlit as st
 import pandas as pd
 import torch
