@@ -56,6 +56,22 @@ if password != PASSWORD:
     st.warning("Please enter the correct password to access the app.")
     st.stop()
 
+#downloading sample csv
+if st.button("📄 Download Sample CSV"):
+    sample_df = pd.DataFrame(data.data[:5], columns=data.feature_names)
+    csv = sample_df.to_csv(index=False).encode("utf-8")
+    st.download_button("⬇️ Download CSV Template", data=csv, file_name="sample_template.csv")
+
+#feature explanation
+with st.sidebar.expander("📚 Feature Info"):
+    st.write("Each column represents a feature from the breast cancer dataset. For example:")
+    st.markdown("""
+    - `mean radius`: average size of the nucleus
+    - `mean texture`: standard deviation of gray-scale values
+    - `mean smoothness`: smoothness of cell borders
+    - ...
+    """)
+
 st.write("Upload a **CSV** file with 30 numerical features (from breast cancer dataset) to predict if samples are **Malignant** or **Benign**.")
 
 uploaded_file = st.file_uploader("📁 Upload CSV", type=["csv"])
@@ -79,6 +95,22 @@ if uploaded_file is not None:
                 predictions = outputs.round().numpy().astype(int).flatten()
 
             df["Prediction"] = ["Malignant" if p == 1 else "Benign" for p in predictions]
+            import plotly.express as px
+            # Count prediction results
+            counts = df["Prediction"].value_counts().reset_index()
+            counts.columns = ["Label", "Count"]
+            # Create and display pie chart
+            fig = px.pie(
+            counts, 
+            names="Label", 
+            values="Count", 
+            hole=0.3,  # Makes it a donut chart
+            hover_data=["Count"],
+            title="🔬 Prediction Distribution",
+            color_discrete_sequence=px.colors.qualitative.Safe  # optional: nice preset colors
+            )
+            st.plotly_chart(fig)
+
             st.subheader("🧾 Prediction Results")
             st.dataframe(df[["Prediction"]])
 
